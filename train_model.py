@@ -8,7 +8,28 @@ def graphData(mileages, prices, theta0, theta1) -> None:
 	plt.plot(mileages, [theta0 + theta1 * x for x in mileages])
 	plt.show()
 
-def main() -> None:
+def normalizeData(data):
+	norm_data = []
+	for i in range(len(data)):
+		norm_data.append((data[i] - min(data)) / (max(data) - min(data)))
+	return norm_data
+
+def predictPrice(mileage, thetas):
+	return (thetas[0] + (thetas[1] * mileage))
+
+def	getErrors0(mileages, prices, thetas):
+	errors = 0
+	for i in range(len(mileages)):
+		errors += predictPrice(mileages[i], thetas) - prices[i]
+	return errors
+
+def	getErrors1(mileages, prices, thetas):
+	errors = 0
+	for i in range(len(mileages)):
+		errors += (predictPrice(mileages[i], thetas) - prices[i]) * mileages[i]
+	return errors
+
+def	getData():
 	try:
 		file = open("data.csv", 'r')
 		reader = csv.reader(file)
@@ -32,45 +53,35 @@ def main() -> None:
 		file.close()
 		exit()
 
-	try:
-		avgKm = sum(mileages) / len(mileages)	#avg: average
-		avgPrice = sum(prices) / len(prices)
+	file.close()	
+	return(mileages, prices)
 
-		errorKms = []
-		for row in mileages:
-			errorKms.append(row - avgKm)
-
-		errorPrices = []
-		for row in prices:
-			errorPrices.append(row - avgPrice)
-
-		sum_error_km_sqrd = 0
-		for row in errorKms:
-			sum_error_km_sqrd += row * row
-
-		product = 0
-		for i in range(len(mileages)):
-			product += errorKms[i] * errorPrices[i]
-
-		theta1 = product / sum_error_km_sqrd
-		theta0 = avgPrice - (theta1 * avgKm)
-
-	except:
-		print("Error: data corrupted")
-		file.close()
-		exit()
-
-	file.close()
-
-	thetas = [theta0, theta1]
+def	writeThetas(thetas):
 	output = open("thetas.csv", 'w')
 	writer = csv.writer(output)
 	writer.writerow(thetas)
-	output.close()
+	output.close()	
 
+def main() -> None:
+	mileages, prices = getData()
+
+	normalized_mileages = normalizeData(mileages)
+	normalized_prices = normalizeData(prices)
+
+	m = len(mileages)
+	tmp_thetas = [0, 0]
+	learning_rate = 0.1
+	iteration_nb = 1000
+	for _ in range(iteration_nb):
+		thetas = tmp_thetas
+		errors0 = getErrors0(normalized_mileages, normalized_prices, thetas)
+		errors1 = getErrors1(normalized_mileages, normalized_prices, thetas)
+		tmp_thetas[0] -= learning_rate * 1 / m * errors0
+		tmp_thetas[1] -= learning_rate * 1 / m * errors1
+
+	writeThetas(thetas)
 	print("Training completed !")
-	graphData(mileages, prices, theta0, theta1)
-
+	graphData(normalized_prices, normalized_mileages, thetas[0], thetas[1])
 
 if __name__ == '__main__':
-    main()
+	main()

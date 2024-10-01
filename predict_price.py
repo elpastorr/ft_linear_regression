@@ -1,6 +1,12 @@
 import csv
 
-def predictPrice(mileage):
+def normalize(mileages, mileage):
+	return ((mileage - min(mileages)) / (max(mileages) - min(mileages)))
+
+def denormalize(prices, price):
+	return ((price * (max(prices) - min(prices))) + min(prices))
+
+def	getThetas():
 	try:
 		file = open("thetas.csv", 'r')
 		reader = csv.reader(file)
@@ -18,7 +24,41 @@ def predictPrice(mileage):
 		file.close()
 		exit()
 	file.close()
-	return (theta0 + (theta1 * mileage))
+	if (theta0 == 0 and theta1 == 0):
+		print("Warning, model not trained !")
+	return (theta0, theta1)
+
+def	getData():
+	try:
+		file = open("data.csv", 'r')
+		reader = csv.reader(file)
+		data = []
+		for row in reader:
+			data.append(row)
+		data.remove(data[0])
+
+		mileages = []
+		prices = []
+		for row in data:
+			mileages.append(float(row[0]))
+			prices.append(float(row[1]))
+	except:
+		print("Error: missing data")
+		file.close()
+		exit()
+
+	if len(mileages) == 0 or len(prices) == 0:
+		print("Error: missing data")
+		file.close()
+		exit()
+
+	file.close()	
+	return(mileages, prices)
+
+def predictPrice(mileage):
+	theta0, theta1 = getThetas()
+	mileages, prices = getData()
+	return (denormalize(prices, theta0 + (theta1 * normalize(mileages, mileage))))
 
 def main() -> None:
 	check = False
@@ -32,7 +72,8 @@ def main() -> None:
 				print("Error: negative mileage")
 		except:
 			print("Error: not a valid number")
-	print(predictPrice(nb_mileage))
+
+	print("Price :", predictPrice(nb_mileage))
 
 if __name__ == '__main__':
     main()
